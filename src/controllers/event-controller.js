@@ -8,11 +8,11 @@ const svc    = new EventService();
 router.get('', async (req, res) => {
     let respuesta;
 
+    const tag = await svc.getTag(req.query.tag);
+    const category = await svc.getCategory(req.query.category)
     let name = req.query.name;
-    let tag = req.query.tag;
     let description = req.query.description;
     let id_creator_user = req.query.id_creator_user;
-    let id_event_category = req.query.id_event_category;
     let id_event_location = req.query.id_event_location;
     let duration_in_minutes = req.query.duration_in_minutes;
     let price = req.query.price;
@@ -20,7 +20,7 @@ router.get('', async (req, res) => {
     let max_assistance = req.query.max_assistance;
     let start_date = req.query.start_date;
 
-    const returnArray = await svc.getAllAsync(name, tag, description, id_event_category, id_event_location, start_date, duration_in_minutes, price, enabled_for_enrollment, max_assistance, id_creator_user);
+    const returnArray = await svc.getAllAsync(name, tag, description, category, id_event_location, start_date, duration_in_minutes, price, enabled_for_enrollment, max_assistance, id_creator_user);
     if (returnArray != null){
       respuesta = res.status(200).json(returnArray);
     } else {
@@ -46,7 +46,8 @@ router.get('', async (req, res) => {
    router.post('', authMiddleware, async (req, res, next) => { 
     let respuesta;
     let entity = req.body;
-    const returnArray = await svc.createAsync(entity);
+    let id_user = req.user.id;
+    const returnArray = await svc.createAsync(entity, id_user);
     if (returnArray != null){
       respuesta = res.status(200).json(returnArray);
     } else {
@@ -85,11 +86,26 @@ router.get('', async (req, res) => {
   });
 
   router.get('/:id', async (req, res) => {
-    const returnEntity = await svc.getEventDetails(req.params.id);
+    const id = req.params.id;
+    try {
+        const response = await svc.getEventDetails(id);
+        if (response !== null) {
+            res.status(200).json({ success: true, response });
+        } else {
+            res.status(404).json({ success: false, message: 'No existe un evento con ese ID' });
+        }
+    } catch (error) {
+        console.error('Error en el manejo de la ruta:', error);
+        res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    }
+});
+
+  router.get('/:tag/tags', async (req, res) => {
+    const returnEntity = await svc.getTag(req.params.tag);
     if (returnEntity == null){
       let respuesta = res.status(404).json();
     }
-      const returnArray = await svc.getEventDetails(req.params.id);
+      const returnArray = await svc.getTag(req.params.tag);
       if (returnArray != null){
         respuesta = res.status(200).json(returnArray);
       } else {
@@ -97,5 +113,4 @@ router.get('', async (req, res) => {
       }
       return respuesta;
   });
-
   export default router;

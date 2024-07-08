@@ -7,29 +7,29 @@ export default class EventRepository {
     getByEventId = async (id_evento, first_name, last_name, username, attended, rating) => {
         let returnArray = null;
         const client = new Client(DBConfig);
-        const values = [];
+        let values = []
     
         try {
             await client.connect();
             let query = `
-                SELECT 
-                    ee.id_event, 
-                    u.first_name, 
-                    u.last_name, 
-                    u.username, 
-                    ee.attended, 
-                    ee.rating 
-                FROM 
-                    users AS u 
-                INNER JOIN 
-                    event_enrollments AS ee 
-                ON 
-                    ee.id_user = u.id`;
-    
+            SELECT 
+                ee.id_event, 
+                u.first_name, 
+                u.last_name, 
+                u.username, 
+                ee.attended, 
+                ee.rating 
+            FROM 
+                users AS u 
+            INNER JOIN 
+                event_enrollments AS ee 
+            ON 
+                ee.id_user = u.id
+            WHERE 
+                ee.id_event = $1`;
+        
             const params = [];
-            let cont = 1;
-    
-            params.push(`ee.id_event = $${cont}`);
+            let cont = 1;            //params.push(`ee.id_event = $${cont}`);
             cont++;
             values.push(id_evento);
     

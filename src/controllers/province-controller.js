@@ -46,15 +46,15 @@ router.post('', async (req, res) => {
     let entity = req.body;
     const returnArray = await svc.createAsync(entity);
     if (returnArray != null){
-      if (!entity.name || !entity.description){
-        respuesta = res.status(400).send('Los campos name o description estan vacios.')
+      if (!entity.name){
+        respuesta = res.status(400).send('Los campos name estan vacios.')
       }
       // <
-    if(entity.name.length < 3 || entity.description.length < 3){
-      respuesta = res.status(400).send('Los campos name o description tienen menos de 3 caracteres.')
+    if(entity.name.length < 3){
+      respuesta = res.status(400).send('Los campos name tienen menos de 3 caracteres.')
     }
     // getByIdLocation
-    const [eventLocation] = await this.repo.getByIdLocation(entity.id_event_location);
+    const [eventLocation] = await svc.getByIdLocation(entity.id_event_location);
 			if (max_assistance > eventLocation.max_capacity) {
 				return [
 					{
