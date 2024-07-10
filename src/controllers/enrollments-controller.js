@@ -23,8 +23,7 @@ router.post('/:id/enrollment', authMiddleware, async (req, res, next) => {
     return respuesta;
 });
 
-router.get('/:id/enrollment', async (req, res)=> {
-    let response;
+router.get('/:id/enrollment', async (req, res) => {
     let first_name = req.query.first_name;
     let id_event = req.params.id;
     let last_name = req.query.last_name;
@@ -32,11 +31,10 @@ router.get('/:id/enrollment', async (req, res)=> {
     let attended = req.query.attended;
     let rating = req.query.rating;
 
-    //first_name, last_name, username, attended, rating
-    //console.log('user:', id_user)
     try {
-        const returnArray = await svc.getByEventId(id_event, first_name, last_name, username, attended, rating);
-        if (response !== null) {
+        const response = await svc.getByEventId(id_event, first_name, last_name, username, attended, rating);
+
+        if (response !== null && response.length > 0) {
             res.status(200).json({ success: true, response });
         } else {
             res.status(404).json({ success: false, message: 'No existe un evento con ese ID' });
@@ -45,7 +43,7 @@ router.get('/:id/enrollment', async (req, res)=> {
         console.error('Error en el manejo de la ruta:', error);
         res.status(500).json({ success: false, message: 'Error interno del servidor' });
     }
-  });
+});
 
 router.delete('/:id/enrollment', authMiddleware, async (req, res, next) => {
   let respuesta;

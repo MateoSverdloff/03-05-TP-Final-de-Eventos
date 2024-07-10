@@ -7,7 +7,7 @@ export default class EventRepository {
     getByEventId = async (id_evento, first_name, last_name, username, attended, rating) => {
         let returnArray = null;
         const client = new Client(DBConfig);
-        let values = []
+        let values = [];
     
         try {
             await client.connect();
@@ -27,40 +27,34 @@ export default class EventRepository {
                 ee.id_user = u.id
             WHERE 
                 ee.id_event = $1`;
-        
+    
             const params = [];
-            let cont = 1;            //params.push(`ee.id_event = $${cont}`);
-            cont++;
+            let cont = 1;
             values.push(id_evento);
     
             if (first_name) {
-                params.push(`lower(u.first_name) = lower($${cont})`);
-                cont++;
+                params.push(`lower(u.first_name) = lower($${++cont})`);
                 values.push(first_name);
             }
             if (last_name) {
-                params.push(`lower(u.last_name) = lower($${cont})`);
-                cont++;
+                params.push(`lower(u.last_name) = lower($${++cont})`);
                 values.push(last_name);
             }
             if (username) {
-                params.push(`lower(u.username) = lower($${cont})`);
-                cont++;
+                params.push(`lower(u.username) = lower($${++cont})`);
                 values.push(username);
             }
             if (attended !== undefined) {
-                params.push(`ee.attended = $${cont}`);
-                cont++;
+                params.push(`ee.attended = $${++cont}`);
                 values.push(attended);
             }
             if (rating !== undefined) {
-                params.push(`ee.rating = $${cont}`);
-                cont++;
+                params.push(`ee.rating = $${++cont}`);
                 values.push(rating);
             }
     
             if (params.length > 0) {
-                query += ' WHERE ' + params.join(' AND ');
+                query += ' AND ' + params.join(' AND ');
             }
     
             const result = await client.query(query, values);
@@ -73,6 +67,7 @@ export default class EventRepository {
     
         return returnArray;
     }
+    
     
 
     createAsync = async (id_user, id_evento) => {

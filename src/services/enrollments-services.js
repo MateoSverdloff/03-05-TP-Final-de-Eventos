@@ -16,14 +16,19 @@ export default class EnrollmentService {
   }
 
 
-  //aca falla 
+  //aca falla
   getByEventId = async (id_event, first_name, last_name, username, attended, rating) => {
     const repo = new EnrollmentsRepository();
-    const response  = await repo.getByEventId(id_event, first_name, last_name, username, attended, rating);
+    const response = await repo.getByEventId(id_event, first_name, last_name, username, attended, rating);
+    if (response === null) {
+        return [{ success: false, message: 'No existe un evento con ese ID' }, 404];
+    }
+    
     return response.length > 0
-    ? [{ success: true, response: response }, 200]
-    : [{ success: false, message: 'No existe un evento con ese ID' }, 404];
+        ? [{ success: true, response: response }, 200]
+        : [{ success: false, message: 'No existe un evento con ese ID' }, 404];
 }
+
 
 
   patchByIdAsync = async (id_event, rating) => {

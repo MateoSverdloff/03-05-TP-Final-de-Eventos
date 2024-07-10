@@ -97,7 +97,7 @@ await client.end();
                     const values = [id];
                     
                     const result = await client.query(sql, values);
-        await client.end();
+                    await client.end();
                     returnArray = result.rows;
                 } catch (error) {
                     console.log(error);
