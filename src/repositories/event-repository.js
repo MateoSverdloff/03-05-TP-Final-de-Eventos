@@ -40,8 +40,7 @@ export default class EventRepository {
                                     INNER JOIN locations as l on l.id = el.id_location 
                                     INNER JOIN provinces as p on p.id = l.id_province 
                                     INNER JOIN event_categories as ec on ec.id = e.id_event_category
-                                    LEFT JOIN public.event_tags ON e.id = event_tags.id_event
-                                    LEFT JOIN public.tags ON event_tags.id_tag = tags.id 
+                                    
                                     Where 1=1`;
             if (tag) {
 				sql += ` AND ec.name ILIKE $${posicion}`;
