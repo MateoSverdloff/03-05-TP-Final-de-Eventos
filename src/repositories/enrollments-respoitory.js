@@ -74,38 +74,41 @@ export default class EventRepository {
         let rowCount = 0;
         const client = new Client(DBConfig);
         try {
-                    console.log('id:evento', id_evento)
-        await client.connect();
-        console.log('Conexión establecida');
+            console.log('id:evento', id_evento);
+            await client.connect();
+            console.log('Conexión establecida');
+            
             const sql = `INSERT INTO public.event_enrollments (id_event, id_user) VALUES ($1, $2)`; 
             const values = [id_evento, id_user]; 
             const result = await client.query(sql, values);
-        await client.end();
-             rowCount = result.rowCount;
-                } catch (error) {
-                    console.log(error);
-                }
-        return rowCount;
+            
+            rowCount = result.rowCount;
+            return { success: true, rowCount }; // Devolver un objeto JSON
+        } catch (error) {
+            console.log(error);
+            return { success: false, error: error.message }; // Manejo de errores
+        } finally {
+            await client.end();
         }
+    }
     
-
+    
     deleteByIdAsync = async (id_user) => {
-        console.log('id: ',id_user)
-        let rowCount = 0;
         const client = new Client(DBConfig);
         try {
-        await client.connect();
-                    const sql = `DELETE FROM event_enrollments Where id_user = $1`;
-                    const values = [id_user];
-                    const result = await client.query(sql, values);
-                    rowCount++;
-        await client.end();
-        rowCount = result.rows;
-                } catch (error) {
-                    console.log(error);
-                }
-        return rowCount;
-}
+            await client.connect();
+            const sql = `DELETE FROM public.event_enrollments WHERE id_user = $1`;
+            const values = [id_user];
+            const result = await client.query(sql, values);
+            return result.rowCount; 
+        } catch (error) {
+            console.error(error);
+            throw error; 
+        } finally {
+            await client.end();
+        }
+    };
+    
 
 patchByIdAsync = async (id_event, rating) => {
     console.log('id: ',id_event, rating)

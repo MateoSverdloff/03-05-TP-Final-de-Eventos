@@ -9,6 +9,8 @@ router.post('/:id/enrollment', authMiddleware, async (req, res, next) => {
     let respuesta;
     let id_evento = req.params.id;
     let id_user = req.user.id;
+    console.log('id_evento', id_evento)
+    console.log('id_user', id_user)
     try {
         const returnArray = await svc.createAsync(id_user, id_evento);
         if (returnArray != null) {
@@ -46,21 +48,18 @@ router.get('/:id/enrollment', async (req, res) => {
 });
 
 router.delete('/:id/enrollment', authMiddleware, async (req, res, next) => {
-  let respuesta;
-  let id_user = req.user.id;
-  console.log('user:', id_user)
-  try {
-      const returnArray = await svc.deleteByIdAsync(id_user);
-      if (returnArray != null) {
-          respuesta = res.status(200).json(returnArray);
-      } else {
-          respuesta = res.status(500).send(`Error interno.`);
-      }
-  } catch (error) {
-      console.error(error);
-      respuesta = res.status(500).send(`Error interno.`);
-  }
-  return respuesta;
+    let id_user = req.user.id;
+    try {
+        const returnArray = await svc.deleteByIdAsync(id_user);
+        if (returnArray > 0) {
+            return res.status(200).json({ success: true });
+        } else {
+            return res.status(404).json({ success: false, message: 'No se encontró la inscripción.' });
+        }
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send(`Error interno.`);
+    }
 });
 
 router.patch('/:id/enrollment/:rating', authMiddleware, async (req, res, next) => {

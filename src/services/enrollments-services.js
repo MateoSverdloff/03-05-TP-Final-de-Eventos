@@ -4,6 +4,9 @@ export default class EnrollmentService {
 
   createAsync = async (id_evento, id_user) => {
     const repo = new EnrollmentsRepository();
+    
+    console.log('id_evento', id_evento);
+    console.log('id_user', id_user);
     const returnArray = await repo.createAsync(id_evento, id_user);
     return returnArray;
 }

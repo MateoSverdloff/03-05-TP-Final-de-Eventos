@@ -6,7 +6,7 @@ const authMiddleware = async (req, res, next) => {
     let payLoadOriginal = null;
     const secretKey = 'backAtIt100$';
     //console.log('token Origial: ', req);
-    //console.log('token Origial: ', token);
+    console.log('token Origial: ', token);
     if (token == null) {
         console.log('token nulo')
         return res.status(401).json({ error: 'Unauthorized'});
