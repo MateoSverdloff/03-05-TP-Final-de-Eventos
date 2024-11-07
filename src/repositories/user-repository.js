@@ -37,23 +37,28 @@ await client.end();
         return returnEntity;
     }
 //validar que el usuario este bien puesto, luego hacer valer el token diablos
-    createAsync = async (entity) => {
-        let rowCount = null;
-        const client = new Client(DBConfig);
+createAsync = async (entity) => {
+    let returnArray = null;
+    const client = new Client(DBConfig);
 
+    try {
+      console.log("Conectando a la base de datos...");
 
-        try {
-                await client.connect();
-                            const sql = `Insert Into users (first_name, last_name, username, password) Values ($1, $2, $3, $4)`;
-                            const values = [entity.first_name,entity.last_name,entity.username,entity.password];  // [2, 'mate´´]
-                            const result = await client.query(sql, values);
-                await client.end();
-                    rowCount = result.rowCount;
-                } catch (error) {
-                    console.log(error);
-                }
-        return rowCount;
+      await client.connect();
+      const sql = `INSERT INTO users (first_name, last_name, username, password) VALUES ($1, $2, $3, $4) RETURNING *`;
+      const values = [entity.first_name, entity.last_name, entity.username, entity.password];
+
+      const result = await client.query(sql, values);
+
+      returnArray = result.rows;  // Cambié de `rowCount` a `returnArray`
+      await client.end();
+    } catch (error) {
+      console.error("Error al ejecutar la consulta:", error);  // Log para capturar cualquier error en la base de datos
     }
+
+    return returnArray;
+  };
+
 
     updateAsync = async (entity) => {
         let rowCount = 0;

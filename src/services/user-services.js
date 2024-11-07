@@ -15,15 +15,10 @@ export default class UserService {
 
   createAsync = async (entity) => {
     const repo = new UserRepository();
-    const rowsAffected = await repo.createAsync(entity);
-    return rowsAffected;
-  }
-
-  updateAsync = async (entity) => {
-    const repo = new UserRepository();
-    const returnArray = await repo.updateAsync(entity);
+    const returnArray = await repo.createAsync(entity);
     return returnArray;
   }
+
   
   deleteByIdAsync = async (id) => {
     const repo = new UserRepository();
