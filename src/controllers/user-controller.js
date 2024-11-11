@@ -5,7 +5,20 @@ import jwt from 'jsonwebtoken';
 const router = Router();
 const svc = new UserService();
 
-router.get('', async (req, res) => {
+router.get('/:id', async (req, res) => { 
+  let respuesta;
+  let id = req.params.id;
+  const returnArray = await svc.getByIdAsync(id);
+  if (returnArray != null){
+    respuesta = res.status(200).json(returnArray);
+  } else {
+    respuesta = res.status(500).send(`Error interno.`);
+  }
+  return respuesta;
+});
+
+
+  router.get('', async (req, res) => {
     let respuesta;
     const returnArray = await svc.getAllAsync();
     if (returnArray != null){
