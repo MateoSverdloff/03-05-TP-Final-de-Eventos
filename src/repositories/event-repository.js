@@ -249,6 +249,104 @@ export default class EventRepository {
         
         return returnEntity;
     }
+
+    async getEventCategory(id) {
+        let returnEntity = null;
+        const client = new Client(DBConfig);
+        try {
+            await client.connect();
+            const sql = `
+                SELECT 
+                    e.id as event_id, 
+                    e.name, 
+                    e.description, 
+                    e.id_event_category, 
+                    e.id_event_location, 
+                    e.start_date, 
+                    e.duration_in_minutes, 
+                    e.price, 
+                    e.enabled_for_enrollment, 
+                    e.max_assistance, 
+                    e.id_creator_user, 
+                    json_build_object(
+                        'id', el.id, 
+                        'id_location', el.id_location, 
+                        'name', el.name, 
+                        'full_address', el.full_address, 
+                        'max_capacity', el.max_capacity, 
+                        'latitude', el.latitude, 
+                        'longitude', el.longitude, 
+                        'id_creator_user', el.id_creator_user, 
+                        'location', json_build_object(
+                            'id', l.id, 
+                            'name', l.name, 
+                            'id_province', l.id_province, 
+                            'latitude', l.latitude, 
+                            'longitude', l.longitude, 
+                            'province', json_build_object(
+                                'id', p.id, 
+                                'name', p.name, 
+                                'full_name', p.full_name, 
+                                'latitude', p.latitude, 
+                                'longitude', p.longitude, 
+                                'display_order', p.display_order
+                            )
+                        ), 
+                        'creator_user', (
+                            SELECT json_build_object(
+                                'id', users.id, 
+                                'first_name', users.first_name, 
+                                'last_name', users.last_name, 
+                                'username', users.username, 
+                                'password', users.password
+                            ) 
+                            FROM users 
+                            WHERE users.id = el.id_creator_user
+                        )
+                    ) as event_location, 
+                    array(
+                        SELECT json_build_object('id', t.id, 'name', t.name) 
+                        FROM tags as t 
+                        INNER JOIN event_tags as et on et.id_event = e.id and et.id_tag = t.id
+                    ) as tags, 
+                    (
+                        SELECT json_build_object(
+                            'id', users.id, 
+                            'first_name', users.first_name, 
+                            'last_name', users.last_name, 
+                            'username', users.username, 
+                            'password', users.password
+                        ) as creator_user 
+                        FROM users 
+                        WHERE users.id = e.id_creator_user
+                    ), 
+                    json_build_object('id', ec.id, 'name', ec.name, 'display_order', ec.display_order) as event_category 
+                FROM 
+                    events as e 
+                    INNER JOIN event_locations as el on el.id = e.id_event_location 
+                    INNER JOIN locations as l on l.id = el.id_location 
+                    INNER JOIN provinces as p on p.id = l.id_province 
+                    INNER JOIN event_categories as ec on ec.id = e.id_event_category
+                    LEFT JOIN event_tags ON e.id = event_tags.id_event
+                    LEFT JOIN tags ON event_tags.id_tag = tags.id 
+                WHERE 
+                    ec.id = $1`;
+        
+            const values = [id];
+            const result = await client.query(sql, values);
+        
+            if (result.rows.length > 0) {
+                returnEntity = result.rows[0];
+            }   
+        
+        } catch (error) {
+            console.error('Error en la consulta:', error);
+        } finally {
+            await client.end();
+        }
+        
+        return returnEntity;
+    }
     
        
     getByIdAsync = async (id) => {

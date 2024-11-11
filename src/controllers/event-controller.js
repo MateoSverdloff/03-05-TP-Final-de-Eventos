@@ -100,6 +100,21 @@ router.get('', async (req, res) => {
     }
 });
 
+router.get('/category/:id', async (req, res) => {
+  const id = req.params.id;
+  try {
+      const response = await svc.getEventCategory(id);
+      if (response !== null) {
+          res.status(200).json({ success: true, response });
+      } else {
+          res.status(404).json({ success: false, message: 'No existe un evento con ese category ID' });
+      }
+  } catch (error) {
+      console.error('Error en el manejo de la ruta:', error);
+      res.status(500).json({ success: false, message: 'Error interno del servidor' });
+  }
+});
+
   router.get('/:tag/tags', async (req, res) => {
     const returnEntity = await svc.getTag(req.params.tag);
     if (returnEntity == null){

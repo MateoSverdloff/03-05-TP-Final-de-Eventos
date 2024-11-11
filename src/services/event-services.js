@@ -10,15 +10,25 @@ export default class EventService {
     return returnArray;
   }
   
-   getByIdAsync = async (id) => {
-     const repo = new EventRepository();
-     const returnArray = await repo.getByIdAsync(id);
-     return response.length > 0
-				? [{ success: true, response: response }, 200]
-				: [{ success: false, message: 'No existe un evento con ese ID' }, 404];
-     return returnArray;
-   }
-
+  getByIdAsync = async (id) => {
+    const repo = new EventRepository();
+    const returnArray = await repo.getByIdAsync(id);
+    return returnArray.length > 0
+      ? [{ success: true, response: returnArray }, 200]
+      : [{ success: false, message: 'No existe un evento con ese ID' }, 404];
+  }
+  
+  getEventCategory = async (id) => {
+    const repo = new EventRepository();
+    const returnArray = await repo.getEventCategory(id);
+  
+    if (returnArray && (Array.isArray(returnArray) ? returnArray.length > 0 : Object.keys(returnArray).length > 0)) {
+      return [{ success: true, response: returnArray }, 200];
+    } else {
+      return [{ success: false, message: 'No existe un evento con ese ID' }, 404];
+    }
+  }
+  
 
    getEventDetails = async (id) => {
     const repo = new EventRepository();
