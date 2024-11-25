@@ -6,28 +6,45 @@ const svc    = new EventService();
 
 
 router.get('', async (req, res) => {
-    let respuesta;
+    try {
+        const {
+            name,
+            tag,
+            description,
+            category,
+            id_event_location,
+            start_date,
+            duration_in_minutes,
+            price,
+            enabled_for_enrollment,
+            max_assistance,
+            id_creator_user
+        } = req.query;
 
-    const tag = await svc.getTag(req.query.tag);
-    const category = await svc.getCategory(req.query.category)
-    let name = req.query.name;
-    let description = req.query.description;
-    let id_creator_user = req.query.id_creator_user;
-    let id_event_location = req.query.id_event_location;
-    let duration_in_minutes = req.query.duration_in_minutes;
-    let price = req.query.price;
-    let enabled_for_enrollment = req.query.enabled_for_enrollment;
-    let max_assistance = req.query.max_assistance;
-    let start_date = req.query.start_date;
+        const returnArray = await svc.getAllAsync(
+            name,
+            tag,
+            description,
+            category,
+            id_event_location,
+            start_date,
+            duration_in_minutes,
+            price,
+            enabled_for_enrollment,
+            max_assistance,
+            id_creator_user
+        );
 
-    const returnArray = await svc.getAllAsync(name, tag, description, category, id_event_location, start_date, duration_in_minutes, price, enabled_for_enrollment, max_assistance, id_creator_user);
-    if (returnArray != null){
-      respuesta = res.status(200).json(returnArray);
-    } else {
-      respuesta = res.status(500).send(`Error interno.`);
+        if (returnArray != null) {
+            return res.status(200).json(returnArray);
+        } else {
+            return res.status(500).send(`Error interno.`);
+        }
+    } catch (error) {
+        console.error('Error en GET events:', error);
+        return res.status(500).json({ error: 'Error interno del servidor' });
     }
-    return respuesta;
-  });
+});
 
   // router.get('/:id', async (req, res) => {
   //   let respuesta;

@@ -10,111 +10,144 @@ export default class EventRepository {
         const values = [];
         try {
             await client.connect();
-            let sql = `SELECT 
-            e.id, e.name, e.description, e.id_event_category, e.id_event_location, e.start_date, e.duration_in_minutes, e.price, 
-            e.enabled_for_enrollment, e.max_assistance, e.id_creator_user, 
-            json_build_object(
-                            'id', el.id, 
-                            'id_location', el.id_location, 
-                            'name', el.name, 
-                            'full_address', el.full_address, 
-                            'max_capacity', el.max_capacity, 
-                            'latitude', el.latitude, 
-                            'longitude', el.longitude, 
-                            'id_creator_user', el.id_creator_user, 
-                            'location', 
-                            json_build_object(
-                                    'id', l.id, 'name', 
-                                    l.name, 'id_province', 
-                                    l.id_province, 'latitude', 
-                                    l.latitude, 'longitude', 
-                                    l.longitude, 'province', 
-                                    json_build_object(
-                                        'id', p.id, 
-                                        'name', p.name, 
-                                        'full_name', p.full_name, 
-                                        'latitude', p.latitude, 
-                                        'longitude', p.longitude, 'display_order', p.display_order)), 
-                                    'creator_user', (SELECT json_build_object('id', users.id, 'first_name', users.first_name, 'last_name', users.last_name, 'username', users.username, 'password', users.password) FROM users WHERE users.id = el.id_creator_user)) as event_location, array(SELECT json_build_object('id', t.id, 'name', t.name) FROM tags as t INNER JOIN event_tags as et on et.id_event = e.id and et.id_tag = t.id) as tags, (SELECT json_build_object('id', users.id, 'first_name', users.first_name, 'last_name', users.last_name, 'username', users.username, 'password', users.password) as creator_user FROM users WHERE users.id = e.id_creator_user), json_build_object('id', ec.id, 'name', ec.name, 'display_order', ec.display_order) as event_category 
-                                    FROM events as e INNER JOIN event_locations as el on el.id = e.id_event_location 
-                                    INNER JOIN locations as l on l.id = el.id_location 
-                                    INNER JOIN provinces as p on p.id = l.id_province 
-                                    INNER JOIN event_categories as ec on ec.id = e.id_event_category
-                                    
-                                    Where 1=1`;
-            if (tag) {
-				sql += ` AND ec.name ILIKE $${posicion}`;
-				posicion++;
-				values.push(tag);
-			}
-			if (category) {
-				params.push(`lower(tags.name) = lower($${posicion})`);
-				posicion++;
-				values.push(category);
-			}
-			// if (startdate) {
-			// 	params.push(`DATE(e.start_date) = DATE($${cont})`);
-			// 	cont++;
-			// 	values.push(startdate);
-			// }
-            if (name !== undefined) {
-                sql += ` AND e.name ILIKE $${posicion}`;
+            let sql = `
+            SELECT DISTINCT ON (e.id)
+                e.id, 
+                e.name, 
+                e.description, 
+                e.id_event_category, 
+                e.id_event_location, 
+                e.start_date, 
+                e.duration_in_minutes, 
+                e.price, 
+                e.enabled_for_enrollment, 
+                e.max_assistance, 
+                e.id_creator_user,
+                json_build_object(
+                    'id', el.id, 
+                    'id_location', el.id_location, 
+                    'name', el.name, 
+                    'full_address', el.full_address, 
+                    'max_capacity', el.max_capacity, 
+                    'latitude', el.latitude, 
+                    'longitude', el.longitude, 
+                    'id_creator_user', el.id_creator_user, 
+                    'location', json_build_object(
+                        'id', l.id, 
+                        'name', l.name, 
+                        'id_province', l.id_province, 
+                        'latitude', l.latitude, 
+                        'longitude', l.longitude, 
+                        'province', json_build_object(
+                            'id', p.id, 
+                            'name', p.name, 
+                            'full_name', p.full_name, 
+                            'latitude', p.latitude, 
+                            'longitude', p.longitude, 
+                            'display_order', p.display_order
+                        )
+                    )
+                ) as event_location,
+                COALESCE(
+                    (
+                        SELECT array_to_json(array_agg(json_build_object('id', t2.id, 'name', t2.name)))
+                        FROM tags t2
+                        INNER JOIN event_tags et2 ON et2.id_tag = t2.id
+                        WHERE et2.id_event = e.id
+                    ),
+                    '[]'
+                ) as tags,
+                json_build_object(
+                    'id', ec.id, 
+                    'name', ec.name, 
+                    'display_order', ec.display_order
+                ) as event_category
+            FROM events e
+            LEFT JOIN event_locations el ON el.id = e.id_event_location 
+            LEFT JOIN locations l ON l.id = el.id_location 
+            LEFT JOIN provinces p ON p.id = l.id_province 
+            LEFT JOIN event_categories ec ON ec.id = e.id_event_category
+            WHERE 1=1`;
+
+            if (tag && tag.length > 0) {
+                sql += ` AND e.id IN (
+                    SELECT et.id_event 
+                    FROM event_tags et 
+                    JOIN tags t ON t.id = et.id_tag 
+                    WHERE LOWER(t.name) ILIKE LOWER($${posicion}))`;
+                posicion++;
+                values.push(`%${tag}%`);
+            }
+
+            if (category && category.length > 0) {
+                sql += ` AND e.id IN (
+                    SELECT e2.id 
+                    FROM events e2 
+                    JOIN event_categories ec2 ON ec2.id = e2.id_event_category 
+                    WHERE LOWER(ec2.name) ILIKE LOWER($${posicion}))`;
+                posicion++;
+                values.push(`%${category}%`);
+            }
+
+            if (name) {
+                sql += ` AND LOWER(e.name) ILIKE LOWER($${posicion})`;
                 values.push(`%${name}%`);
                 posicion++;
             }
-            if (description !== undefined) {
-                sql += ` AND LOWER(description) LIKE LOWER($${posicion})`;
+
+            if (description) {
+                sql += ` AND LOWER(e.description) ILIKE LOWER($${posicion})`;
                 values.push(`%${description}%`);
                 posicion++;
             }
-            // if (id_event_category !== undefined) {
-            //     sql += ` AND id_event_category = $${posicion}`;
-            //     values.push(id_event_category);
-            //     posicion++;
-            // }
-            if (id_event_location !== undefined) {
-                sql += ` AND id_event_location = $${posicion}`;
+
+            if (id_event_location) {
+                sql += ` AND e.id_event_location = $${posicion}`;
                 values.push(id_event_location);
                 posicion++;
             }
-            // if (start_date !== undefined) {
-            //     sql += ` AND start_date = $${posicion}`;
-            //     values.push(start_date);
-            //     posicion++;
-            // }
-            if (duration_in_minutes !== undefined) {
-                sql += ` AND duration_in_minutes = $${posicion}`;
+
+            if (duration_in_minutes) {
+                sql += ` AND e.duration_in_minutes = $${posicion}`;
                 values.push(duration_in_minutes);
                 posicion++;
             }
-            if (price !== undefined) {
-                sql += ` AND     price = $${posicion}`;
+
+            if (price) {
+                sql += ` AND e.price = $${posicion}`;
                 values.push(price);
                 posicion++;
             }
-            if (enabled_for_enrollment !== undefined) {
-                sql += ` AND enabled_for_enrollment = $${posicion}`;
+
+            if (enabled_for_enrollment) {
+                sql += ` AND e.enabled_for_enrollment = $${posicion}`;
                 values.push(enabled_for_enrollment);
                 posicion++;
             }
-            if (max_assistance !== undefined) {
-                sql += ` AND max_assistance = $${posicion}`;
+
+            if (max_assistance) {
+                sql += ` AND e.max_assistance = $${posicion}`;
                 values.push(max_assistance);
                 posicion++;
             }
-            if (id_creator_user !== undefined) {
-                sql += ` AND id_creator_user = $${posicion}`;
+
+            if (id_creator_user) {
+                sql += ` AND e.id_creator_user = $${posicion}`;
                 values.push(id_creator_user);
                 posicion++;
-            }    
+            }
+
+            sql += ` ORDER BY e.id`;
+
             const result = await client.query(sql, values);
             returnArray = result.rows;
         } catch (error) {
-            console.log(error);
+            console.error('Error en getAllAsync:', error);
+            throw error;
         } finally {
             await client.end();
         }
-    
+
         return returnArray;
     }
     
@@ -143,7 +176,7 @@ export default class EventRepository {
             await client.connect();
             const sql = `SELECT * FROM public.events
             LEFT JOIN public.event_categories ON event_categories.id = events.id_event_category
-            WHERE lower(category.name)=$1`;
+            WHERE lower(event_categories.name)=$1;`;
             const values = [category];
             const result = await client.query(sql, values);
             return result.rows;
@@ -157,6 +190,12 @@ export default class EventRepository {
         const client = new Client(DBConfig);
         try {
             await client.connect();
+            const numericId = parseInt(id, 10);
+            
+            if (isNaN(numericId)) {
+                throw new Error('ID inválido');
+            }
+
             const sql = `
                 SELECT 
                     e.id as event_id, 
@@ -234,7 +273,7 @@ export default class EventRepository {
                 WHERE 
                     e.id = $1`;
         
-            const values = [id];
+            const values = [numericId];
             const result = await client.query(sql, values);
         
             if (result.rows.length > 0) {
@@ -243,6 +282,7 @@ export default class EventRepository {
         
         } catch (error) {
             console.error('Error en la consulta:', error);
+            throw error;
         } finally {
             await client.end();
         }
